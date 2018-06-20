@@ -1,0 +1,21 @@
+Sistema Linear e Grafos: Modelo de Trânsito
+Pedro Possato | 117053803
+
+Este projeto consiste na solução de problemas relacionados ao trânsito. Tendo em conta ruas que formam entre si ângulos de 90 graus, como por exemplo a maioria das ruas de Nova Iorque, podemos, a partir do uso de matrizes e suas propriedades, constuir programas que calculam a intensidade de tráfego "sofrida" por uma rua sem precisar observá-la! 
+Isto ocorre a partir da observação das ruas ao seu redor, as quais trazem valiosas informações sobre a rua "desconhecida".
+Imaginemos ter conhecimento do tráfego de 4 ruas... 2 horizontais e 2 verticais, se observadas de cima. Estas, quando interceptadas, formam 4 cruzamentos. Podemos dizer que existem "sub-ruas" dentro das áreas que definem os cruzamentos. Porém, não sabemos ao certo o tráfego destas sub-ruas, uma vez que tal cruzamento modificou o tráfego daquela via.
+É nesse momento que podemos utilizar tais matrizes a nosso favor e descobrir o tráfego dessas ruas internas. 
+
+Resumo do procedimento de descoberta desses valores:
+Primeiro, definamos o nome das ruas que trataremos: temos informações sobre as ruas X e Y, porém, depois do cruzamento destas, temos duas novas ruas X2 e Y2. Isto, se observado em nosso escopo do exemplo anterior (4 ruas), teremos 4 situações de X,Y -> X2,Y2. Então conhecendo estas 8 ruas externas, buscamos encontrar as 4 ruas internas que não possuímos informações.
+Aplicando X + Y = X2 + Y2 para cada conjunto destas ruas teremos sistemas lineares do tipo:
+Xa + Ya = X2a + Y2a
+Xb + Yb = X2b + Y2b
+Xc + Yc = X2c + Y2c
+Xd + Yd = X2d + Y2d
+Uma vez que temos informação de Xa, Xb, Xc, Xd, Ya, Yb, Yc e Yd, podemos formar matrizes que resolvam nossa questão:
+Exemplo:
+[1  1  0  0][x1] = [c1]
+[-1 0  1  0][x2] = [c2]
+[0  1  0 -1][x3] = [c3]
+[0  0  1  1][x4] = [c4]

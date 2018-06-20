@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title> Sistema Linear e grafos: Modelo de Transito </title>
+    <style type="text/css">
+        html, body {
+            width: 100%;
+            height: 100%;
+            min-width: 100%;
+            min-height: 100%;
+        }
+        body {
+            color: #2a324b;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #e1e5ee;
+        }
+        canvas {
+            border: 2px solid #A4DDD8;
+            background-color: #fbfcff;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="c"></canvas>
+    <script type="text/javascript">
+
+            const canvas = document.getElementById("c");
+            const ctx = canvas.getContext("2d");
+            const W = 900;
+            const H = 600;
+            const FPS = 30;
+            const _DEBUG = false;
+            const up = new Image();
+            up.src = "up.png";
+            const down = new Image();
+            down.src = "down.png";
+            const left = new Image();
+            left.src = "left.png";
+			const right = new Image();
+            right.src = "right.png";
+            const barra = new Image();
+            barra.src = "barra.png";
+            const up2 = new Image();
+            up2.src = "up2.png";
+            const down2 = new Image();
+            down2.src = "down2.png";
+            const left2 = new Image();
+            left2.src = "left2.png";
+            const right2 = new Image();
+            right2.src = "right2.png";
+            const done = new Image();
+            done.src = "done.png";
+            const pad = new Image();
+            pad.src = "pad.png";
+            const pad2 = new Image();
+            pad2.src = "pad2.png";
+
+            let imageUp = {
+            	x: 56,
+            	y: 112,
+            	x0: 10,
+            	y0: 10
+            }
+
+            let imageDown = {
+            	x: 56,
+            	y: 112,
+            	x0: 10*2+imageUp.x,
+            	y0: 10
+            }
+
+            let imageLeft = {
+            	x: 112,
+            	y: 56,
+            	x0: 10+5,
+            	y0: 10*2+imageUp.y
+            }
+
+            let imageRight = {
+            	x: 112,
+            	y: 56,
+            	x0: 10+5,
+            	y0: 10*3+imageUp.y+imageLeft.y
+            }
+
+            let imagePad = {
+            	x0: imageUp.x0,
+            	y0: imageUp.y0,
+           		x: imageDown.x0 + imageDown.x - imageUp.x0,
+           		y: imageRight.y0 + imageRight.y - imageUp.y0
+           	}
+
+           	let drawPad = 0;
+
+            let imageBarra = {x: 10*3+imageUp.x*2}
+
+            let board = {
+            	x0: 240,
+            	y0: 60,
+            	x: 820,
+            	y: 540
+            }
+
+            let imageDone = {
+            	x0: 16,
+            	y0: 275,
+            	x: 123,
+            	y: 331
+            }
+
+            let drawArrowV = [];
+            let drawArrowH = [];
+            let drawArrow = [];
+
+            let temp = {
+            	x0: 0,
+            	y0: 0,
+            	x: 0,
+            	y: 0
+            }
+
+
+            let allowed = true;
+
+            let counterV = 0;
+            let counterH = 0;
+
+            let positionV = [];
+            let positionH = [];
+            
+            let mouse = {
+                x: 0,
+                y: 0,
+                d: false,
+                down: false
+            }
+
+            let keys = {};
+
+            let padNumbers = "";
+            let futureX = [-1];
+            let futureX2 = [-1];
+
+            let transform = false;
+
+            let vars = [];
+            let tempBool = true;
+
+            let signal = 1;
+
+            let firstTime = 0;
+
+            function documentation() {
+
+                document.onkeydown = function keydown(e) {
+                    if(!e.isTrusted) return;
+                    keys[e.key] = true;
+                }
+
+                document.onkeyup = function keyup(e) {
+                    if(!e.isTrusted) return;
+                    keys[e.key] = false;
+                }
+
+                document.onmousedown = function mousedown(e) {
+                    mouse.d = true;
+                }
+
+                document.onmouseup = function mouseup(e) {
+                    mouse.d = false;
+                }
+
+                document.onmousemove = function mousemove(e) {
+                    mouse.x = e.offsetX;
+                    mouse.y = e.offsetY;
+                }
+
+            }
+
+            function buttonAdjustments() {
+            	imageUp.x += imageUp.x0; 
+            	imageUp.y += imageUp.y0; 
+            	imageDown.x += imageDown.x0; 
+            	imageDown.y += imageDown.y0;
+            	imageLeft.x += imageLeft.x0; 
+            	imageLeft.y += imageLeft.y0; 
+            	imageRight.x += imageRight.x0; 
+            	imageRight.y += imageRight.y0;
+            }
+
+            function drawImages() {
+            	ctx.drawImage(up,imageUp.x0,imageUp.y0);
+                ctx.drawImage(down,imageDown.x0,imageDown.y0);
+                ctx.drawImage(left,imageLeft.x0,imageLeft.y0);
+                ctx.drawImage(right,imageRight.x0,imageRight.y0);
+                ctx.drawImage(barra,imageBarra.x,0);
+                ctx.drawImage(done,imageDone.x0,imageDone.y0);
+                if(drawPad && !transform) ctx.drawImage(pad,imagePad.x0,imagePad.y0);
+                else if(drawPad) { ctx.drawImage(pad2,imagePad.x0,imagePad.y0); transform = false; }
+            }
+
+            function drawTexts() {
+            	ctx.scale(2,2);
+            	ctx.fillText("ALA - 2018.1",10/2,(120+imageUp.y+imageLeft.y*2-imageUp.y0-imageLeft.y0*2)/2+15);
+                ctx.fillText("Pedro Possato",4/2,(120+40+imageUp.y+imageLeft.y*2-imageUp.y0-imageLeft.y0*2)/2+15);
+				ctx.fillText("Sistema linear",6/2,(120+100+imageUp.y+imageLeft.y*2-imageUp.y0-imageLeft.y0*2)/2+10);
+				ctx.fillText("e grafos:",28/2,(120+140+imageUp.y+imageLeft.y*2-imageUp.y0-imageLeft.y0*2)/2+10);
+				ctx.fillText("Modelo de",18/2,(120+180+imageUp.y+imageLeft.y*2-imageUp.y0-imageLeft.y0*2)/2+10);
+				ctx.fillText("trânsito",32/2,(120+220+imageUp.y+imageLeft.y*2-imageUp.y0-imageLeft.y0*2)/2+10);
+
+            }
+
+            function click(x,y) { 
+
+            	// console.log(x,y);
+
+            	if(!drawPad) {
+	            	if(x>=imageUp.x0 && x<=imageUp.x && y>=imageUp.y0 && y<=imageUp.y && allowed) { drawArrowV.push(0); drawArrow.push(0); counterV++; drawPad = 2; }
+	            	if(x>=imageDown.x0 && x<=imageDown.x && y>=imageDown.y0 && y<=imageDown.y && allowed) { drawArrowV.push(1); drawArrow.push(0); counterV++; drawPad = 2; }
+	            	if(x>=imageLeft.x0 && x<=imageLeft.x && y>=imageLeft.y0 && y<=imageLeft.y && allowed) { drawArrowH.push(0); drawArrow.push(1); counterH++; drawPad = 2; }
+	            	if(x>=imageRight.x0 && x<=imageRight.x && y>=imageRight.y0 && y<=imageRight.y && allowed) { drawArrowH.push(1); drawArrow.push(1); counterH++; drawPad = 2; }
+	            	if(x>=imageDone.x0 && x<= imageDone.x && y>=imageDone.y0 && y<=imageDone.y) { allowed = false; initVariables(); }
+            	}
+            	else {
+            		requestValues(x,y);
+            	}
+            }
+
+            function checkSignal() {
+            	if((drawArrowV[0] != drawArrowH[0])) signal = -1;
+            }
+
+            function requestValues(x,y) {
+            	transform = true;
+            	// console.log("F -> ",futureX," | PN -> ",padNumbers)
+            	if(x>=imagePad.x0 && y>=imagePad.y0 && x<=imagePad.x0+79 && y<=imagePad.y0+68) { 
+            		drawPad--; 
+            		if(drawPad-1) { futureX[futureX.length-1] = Number(padNumbers); futureX.push(-1); }
+            		else { futureX2[futureX2.length-1] = Number(padNumbers); futureX2.push(-1); }
+            		padNumbers = "";
+
+            	}
+            	else if(x>=imagePad.x0+85 && y>=imagePad.y0 && x<=imagePad.x && y<=imagePad.y0+68) padNumbers+='0';
+            	else if(x>=imagePad.x0 && y>=imagePad.y0+69 && x<=imagePad.x0+39 && y<=imagePad.y0+123) padNumbers+='1';
+            	else if(x>=imagePad.x0+44 && y>=imagePad.y0+69 && x<=imagePad.x0+79 && y<=imagePad.y0+123) padNumbers+='2';
+            	else if(x>=imagePad.x0+85 && y>=imagePad.y0+69 && x<=imagePad.x && y<=imagePad.y0+123) padNumbers+='3';
+            	else if(x>=imagePad.x0 && y>=imagePad.y0+128 && x<=imagePad.x0+39 && y<=imagePad.y0+182) padNumbers+='4';
+            	else if(x>=imagePad.x0+44 && y>=imagePad.y0+128 && x<=imagePad.x0+79 && y<=imagePad.y0+182) padNumbers+='5';
+            	else if(x>=imagePad.x0+85 && y>=imagePad.y0+128 && x<=imagePad.x && y<=imagePad.y0+182) padNumbers+='6';
+            	else if(x>=imagePad.x0 && y>=imagePad.y0+187 && x<=imagePad.x0+39 && y<=imagePad.y) padNumbers+='7';
+            	else if(x>=imagePad.x0+44 && y>=imagePad.y0+187 && x<=imagePad.x0+79 && y<=imagePad.y) padNumbers+='8';
+            	else if(x>=imagePad.x0+85 && y>=imagePad.y0+187 && x<=imagePad.x && y<=imagePad.y) padNumbers+='9';
+            	else transform = false;
+
+            }
+
+            function buttonV(i) {
+            	let x = 0;
+            	for(let k = 0; k<i; k++) {
+            		if(drawArrow[k]) x++;
+            	}
+            	i-= x;
+            	ctx.fillStyle = "#FF0000";
+
+            
+        		temp.x0 = ((board.x-board.x0)/(drawArrowV.length+1))*(i+1)+board.x0;
+        		temp.y0 = board.y0;
+        		temp.x = temp.x0;
+        		temp.y = board.y;
+        		ctx.scale(2,2);
+        		let baixo = (i+x)*2;
+        		// console.log("FutureX -> ",futureX," | futureX2",futureX2);
+        		if(futureX[baixo/2]>=0) ctx.fillText(futureX[baixo/2],temp.x/2-4,temp.y/2+12);
+        		else ctx.fillText("X"+(baixo+1),temp.x/2-4,temp.y/2+12);
+        		if(futureX2[baixo/2]>=0) ctx.fillText(futureX2[baixo/2],temp.x0/2-4,temp.y0/2-5);
+        		else ctx.fillText("X"+(baixo),temp.x0/2-4,temp.y0/2-5);
+        		if(!allowed) { vars[baixo+1] = futureX[baixo/2]; vars[baixo] = futureX2[baixo/2]; }
+        		//console.log("Aqui no buttonV o baixo vale ",baixo);
+        		ctx.scale(0.5,0.5);
+
+        		if(drawArrowV[i]) {
+        			ctx.drawImage(down2,temp.x0,temp.y0);
+        		}
+        		else {
+        			ctx.drawImage(up2,temp.x0,temp.y0);
+        		}
+        		if(!allowed && positionV.length<drawArrowV.length) positionV.push(temp.x0);
+        	
+
+            }
+
+
+            function buttonH(j) {
+            	let x = 0;
+            	for(let k = 0; k<j; k++) {
+            		if(!drawArrow[k]) x++;
+            	}
+            	j-= x;
+            	ctx.fillStyle = "#FF0000";
+
+            	//for(let j = 0; j<drawArrowH.length; j++) {
+
+            		temp.x0 = board.x0;
+            		temp.y0 = ((board.y-board.y0)/(drawArrowH.length+1))*(j+1)+board.y0;
+            		temp.x = board.x;
+            		temp.y = temp.y0;
+            		ctx.scale(2,2);
+            		let baixo = (j+x)*2;
+            		if(futureX[baixo/2]>=0) ctx.fillText(futureX[baixo/2],temp.x/2+4,temp.y0/2+6);
+            		else ctx.fillText("X"+(baixo+1),temp.x/2+4,temp.y0/2+6)
+            		if(futureX2[baixo/2]>=0) ctx.fillText(futureX2[baixo/2],temp.x0/2-24,temp.y0/2+6);            		
+            		else ctx.fillText("X"+(baixo),temp.x0/2-24,temp.y0/2+6);
+            		if(!allowed) { vars[baixo+1] = futureX[baixo/2]; vars[baixo] = futureX2[baixo/2]; }
+            		//console.log("Aqui no buttonH o baixo vale ",baixo);
+            		ctx.scale(0.5,0.5);
+
+            		if(drawArrowH[j]) {
+            			ctx.drawImage(right2,temp.x0,temp.y0);
+            		}
+            		else {
+            			ctx.drawImage(left2,temp.x0,temp.y0);
+            		}
+            		if(!allowed && positionH.length<drawArrowH.length) positionH.push(temp.y0);
+            	//}
+            }
+
+            function download(filename, text) {
+  				var element = document.createElement('a');
+  				element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+				element.setAttribute('download', filename);
+
+			    element.style.display = 'none';
+		   	    document.body.appendChild(element);
+
+				element.click();
+
+				document.body.removeChild(element);
+		    }
+
+
+            function initVariables() {
+
+            	checkSignal();
+            	
+            	let lenH = drawArrowH.length;
+            	let lenV = drawArrowV.length;
+            	let len = 2*lenH*lenV+lenH+lenV;
+
+            	//console.log(futureX,futureX2);
+
+            	ctx.fillStyle = "#000000";
+            	ctx.scale(2,2);
+            	let counter = drawArrow.length*2;
+            	for(let i = 0; i<drawArrowH.length*2-1; i++) {
+            		for(let j = 0; j<drawArrowV.length-1+(i%2); j++) {
+            			if(i&1) {
+            				ctx.fillStyle = "#FF0000";
+            				ctx.fillText("X"+counter,0.5*(positionV[j])-20,0.5*((positionH[(i-1)/2]+positionH[(i+1)/2])/2+2));
+            				counter++;
+            			}
+            			else {
+            				ctx.fillStyle = "#000000";
+            				ctx.fillText("X"+counter,0.5*((positionV[j]+positionV[j+1])/2)-4,0.5*(positionH[i/2]));
+            				counter++;
+            			}
+            		}
+            	}
+            	ctx.scale(0.5,0.5); 
+            	firstTime++;
+            	if(firstTime == 3) { /*console.log("Primeira vez",vars);*/ download("numbers.txt", JSON.stringify(vars)); }
+            }
+
+
+            function buttons() {
+            	for(let i = 0; i<drawArrow.length; i++) {
+            		if(drawArrow[i])
+            			buttonH(i);
+            		else
+            			buttonV(i);
+            	}
+            }
+
+
+            function init() {
+                documentation();
+                canvas.width = W;
+                canvas.height = H;
+                ctx.mozImageSmoothingEnabled = false;
+                ctx.webkitImageSmoothingEnabled = false;
+                ctx.msImageSmoothingEnabled = false;
+                ctx.imageSmoothingEnabled = false;
+                buttonAdjustments();
+
+                loop();
+            }
+
+
+            function update() {
+
+                if(mouse.d) {
+                    mouse.down = true;
+                }
+
+                if(mouse.down && !mouse.d) {
+                    mouse.down = false;
+                    click(mouse.x,mouse.y);
+                }
+
+                buttons();
+                if(!allowed) initVariables();
+                if(tempBool && !allowed) {
+                	let lenH = drawArrowH.length;
+            		let lenV = drawArrowV.length;
+            		let len = 2*lenH*lenV+lenH+lenV;
+               		let newArray = [];
+               		for(let i = 0; i<lenV; i++) newArray.push(vars[i*2+1]);
+               		//console.log("newArray -> ",newArray);
+                	for(let i = 0; i<lenV; i++) vars.splice(i+1, 1);
+                	for(let i = 0; i<newArray.length; i++) vars.push(newArray[i]);
+                	for(let i = vars.length; i<len; i++) vars.push(-1);
+                	tempBool = false;
+                	//console.log("vars -> ",vars);
+                	firstTime++; console.log(firstTime);
+            		if(firstTime == 3) { console.log("Primeira vez",vars); download("numbers.txt", JSON.stringify(vars)+" "+drawArrowV.length+" "+drawArrowH.length+" "+signal ); }
+                	//console.log("signal -> ",signal);
+                }
+
+            }
+
+
+            function draw() {
+
+                ctx.fillStyle = "#111";
+                drawImages();
+                drawTexts();
+
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+            }
+
+            
+            function loop() {
+
+                ctx.fillStyle = "#AEE4E4";
+                ctx.fillRect(0, 0, W, H);
+                update();
+                draw();
+                requestAnimationFrame(loop);
+              }
+
+
+            init();
+
+
+    </script>
+</body>
+</html>
