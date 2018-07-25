@@ -58,6 +58,7 @@
             let obstacleY = [];
 
             let blocked = false;
+            let boo = false;
 
             function documentation() {
 
@@ -148,12 +149,14 @@
             }
                 
             function update() {
+            	if(keys.p) boo = true;
+            	if(boo && !keys.p) { blocked = !blocked; boo = false; }
             	if(!blocked) {
             		ballMovimentation();
             		ball.score++;
-            	createObstacle();
-            	updateObstacles();
-            	checkCollision();
+	            	createObstacle();
+	            	updateObstacles();
+	            	checkCollision();
                 }
                 else { ctx.fillStyle = "#FF0000"; ctx.fillText("|",ball.x,ball.y); }
               }
