@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title> Game </title> <!-- escolha do titulo -->
+    <style type="text/css">
+        html, body {
+            width: 100%;
+            height: 100%;
+            min-width: 100%;
+            min-height: 100%;
+        }
+        body {
+            color: #2a324b; 
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #e1e5ee;
+        }
+        canvas {
+            border: 2px solid #c7ccdb;
+            background-color: #fbfcff;
+        }
+
+    </style>
+</head>
+<body>
+    <canvas id="c"></canvas>
+    <script type="text/javascript">
+
+            const canvas = document.getElementById("c");
+            const ctx = canvas.getContext("2d");
+            const W = 1530;
+            const H = 725;
+            const FPS = 30;
+            const _DEBUG = false;
+
+             const imageBall = new Image();
+             imageBall.src = "./ball.png";
+             const imageObstacle = new Image();
+             imageObstacle.src = "./obstacle.jpg";
+            
+            let keys = {};
+
+            let ball = {
+            	x: 10,
+            	y: H/2-50,
+            	speed: 7,
+            	perimeter: 55,
+            	score: 0,
+            	best: 0
+            };
+
+            let obstacleX = [];
+            let obstacleY = [];
+
+            let blocked = false;
+
+            function documentation() {
+
+                document.onkeydown = function keydown(e) {
+                    if(!e.isTrusted) return;
+                    keys[e.key] = true;
+                }
+
+                document.onkeyup = function keyup(e) {
+                    if(!e.isTrusted) return;
+                    keys[e.key] = false;
+                }
+
+            }
+
+            function init() {
+                documentation();
+                canvas.width = W;
+                canvas.height = H;
+                ctx.mozImageSmoothingEnabled = false;
+                ctx.webkitImageSmoothingEnabled = false;
+                ctx.msImageSmoothingEnabled = false;
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(imageBall,ball.x,ball.y);
+                
+                loop();
+            }
+
+            function ballMovimentation() {
+            	if((keys["ArrowUp"] || keys.w) && spaceAvailable(0,-1)) ball.y-=ball.speed;
+            	if((keys["ArrowDown"] || keys.s) && spaceAvailable(0,1)) ball.y+=ball.speed;
+            	if((keys["ArrowLeft"] || keys.a) && spaceAvailable(-1,0)) ball.x-=ball.speed+2;
+            	if((keys["ArrowRight"] || keys.d) && spaceAvailable(1,0)) ball.x+=ball.speed;
+            }
+
+            function spaceAvailable(x,y) {
+            	return blocked ? 0 : x ? x > 0 ? ball.x<=W-ball.perimeter : ball.x>=5 : y > 0 ? ball.y<=H-ball.perimeter : ball.y>=5;
+            }
+
+            function sleep(ms) {
+  				return new Promise(resolve => setTimeout(resolve, ms));
+			}
+
+            async function death() {
+            	blocked = true;
+            	ball.score = (ball.score/30-((ball.score/30)%1));
+            	if(ball.score>ball.best) ball.best = ball.score;
+            	ball.score = 0;
+            	ctx.scale(4,4);
+            	ctx.fillStyle = "#FF0000";
+            	ctx.fillText("Game Over!",(ball.x-20)/8,(ball.y+20)/8);
+            	ctx.scale(0.25,0.25);
+            	await sleep(1000);
+            	obstacleX = [];
+            	obstacleY = [];
+            	ball.x = 10;
+            	ball.y = H/2-50;
+            	blocked = false;
+            }
+
+            function drawObstacle() {
+            	for(let i = 0; i < obstacleX.length; i++) {
+            		ctx.drawImage(imageObstacle,obstacleX[i],obstacleY[i]);
+            	}
+            }
+
+            function createObstacle() {
+            	let rnd = Math.random();
+            	if(rnd>(0.99-(ball.score/30-((ball.score/30)%1))/800)) {
+            		obstacleX.push(W+100);
+            		obstacleY.push(675*Math.random());
+            	}
+            }
+
+            function updateObstacles() {
+            	if(!blocked) {
+	            	for(let i = 0; i < obstacleX.length; i++) {
+	            		obstacleX[i]-=6;
+	            		if(obstacleX[i]<-50) { obstacleX.shift(); obstacleY.shift(); }
+	            	}
+				}
+            }
+
+            function checkCollision() {
+            	for(let i = 0; i < obstacleX.length; i++) {
+            		if(ball.x>obstacleX[i]-50 && ball.x<obstacleX[i]+50 && ball.y>obstacleY[i]-50 && ball.y<obstacleY[i]+50) death();
+            	}
+            }
+                
+            function update() {
+            	if(!blocked) {
+            		ballMovimentation();
+            		ball.score++;
+            	createObstacle();
+            	updateObstacles();
+            	checkCollision();
+                }
+                else { ctx.fillStyle = "#FF0000"; ctx.fillText("|",ball.x,ball.y); }
+              }
+
+            function draw() {
+
+                ctx.fillStyle = "#FFF";
+                ctx.drawImage(imageBall,ball.x,ball.y);
+                drawObstacle();
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.scale(4,4);
+                ctx.fillStyle = "#FF0000";
+                ctx.fillText("Score: "+(ball.score/30-((ball.score/30)%1)), (W/2-100)/4, 12);
+                ctx.fillText("Best score: "+ball.best,(W-315)/4,12);
+                ctx.scale(0.25,0.25);
+            }
+
+            function loop() {
+                ctx.fillStyle = "#000000";
+                ctx.fillRect(0, 0, W, H);
+                update();
+                draw();
+                requestAnimationFrame(loop);
+            }
+
+
+            init();
+
+
+    </script>
+</body>
+</html>
