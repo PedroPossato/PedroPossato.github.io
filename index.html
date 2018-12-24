@@ -41,7 +41,7 @@
              const imageBall = new Image();
              imageBall.src = "./ball.png";
              const imageObstacle = new Image();
-             imageObstacle.src = "./obstacle.jpg";
+             imageObstacle.src = "./obstacle.png";
             
             let keys = {};
 
@@ -50,8 +50,8 @@
             	y: H/2-50,
             	speed: 7,
             	perimeter: 55,
-            	score: 0,
-            	best: 0
+            	score: 900,
+            	best: 30
             };
 
             let obstacleX = [];
@@ -106,7 +106,7 @@
             	blocked = true;
             	ball.score = (ball.score/30-((ball.score/30)%1));
             	if(ball.score>ball.best) ball.best = ball.score;
-            	ball.score = 0;
+            	ball.score = 900;
             	ctx.scale(4,4);
             	ctx.fillStyle = "#FF0000";
             	ctx.fillText("Game Over!",(ball.x-20)/8,(ball.y+20)/8);
@@ -169,8 +169,8 @@
                 ctx.setTransform(1, 0, 0, 1, 0, 0);
                 ctx.scale(4,4);
                 ctx.fillStyle = "#FF0000";
-                ctx.fillText("Score: "+(ball.score/30-((ball.score/30)%1)), (W/2-100)/4, 12);
-                ctx.fillText("Best score: "+ball.best,(W-315)/4,12);
+                ctx.fillText("Score: "+(ball.score/30-30-((ball.score/30)%1)), (W/2-100)/4, 12);
+                ctx.fillText("Best score: "+(ball.best-30),(W-315)/4,12);
                 ctx.scale(0.25,0.25);
             }
 
