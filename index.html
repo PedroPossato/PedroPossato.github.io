@@ -13,7 +13,7 @@
             min-height: 100%;
         }
         body {
-            color: #2a324b; 
+            color: #2a324b;
             margin: 0;
             display: flex;
             align-items: center;
@@ -42,7 +42,7 @@
              imageBall.src = "./ball.png";
              const imageObstacle = new Image();
              imageObstacle.src = "./obstacle.png";
-            
+
             let keys = {};
 
             let ball = {
@@ -59,6 +59,8 @@
 
             let blocked = false;
             let boo = false;
+
+            let done = false;
 
             function documentation() {
 
@@ -83,7 +85,7 @@
                 ctx.msImageSmoothingEnabled = false;
                 ctx.imageSmoothingEnabled = false;
                 ctx.drawImage(imageBall,ball.x,ball.y);
-                
+
                 loop();
             }
 
@@ -95,7 +97,7 @@
             }
 
             function spaceAvailable(x,y) {
-            	return blocked ? 0 : x ? x > 0 ? ball.x<=W-ball.perimeter : ball.x>=5 : y > 0 ? ball.y<=H-ball.perimeter : ball.y>=5;
+            	return blocked ? 0 : x ? x > 0 ? ball.x<=canvas.width-ball.perimeter : ball.x>=5 : y > 0 ? ball.y<=canvas.height-ball.perimeter : ball.y>=5;
             }
 
             function sleep(ms) {
@@ -107,15 +109,11 @@
             	ball.score = (ball.score/30-((ball.score/30)%1));
             	if(ball.score>ball.best) ball.best = ball.score;
             	ball.score = 900;
-            	ctx.scale(4,4);
-            	ctx.fillStyle = "#FF0000";
-            	ctx.fillText("Game Over!",(ball.x-20)/8,(ball.y+20)/8);
-            	ctx.scale(0.25,0.25);
             	await sleep(1000);
             	obstacleX = [];
             	obstacleY = [];
             	ball.x = 10;
-            	ball.y = H/2-50;
+            	ball.y = canvas.height/2-50;
             	blocked = false;
             }
 
@@ -127,9 +125,9 @@
 
             function createObstacle() {
             	let rnd = Math.random();
-            	if(rnd>(0.99-(ball.score/30-((ball.score/30)%1))/800)) {
-            		obstacleX.push(W+100);
-            		obstacleY.push(675*Math.random());
+            	if(rnd>((0.99-(ball.score/30-((ball.score/30)%1))/800*canvas.height/725))) {
+            		obstacleX.push(canvas.width+100);
+            		obstacleY.push((canvas.height-50)*Math.random());
             	}
             }
 
@@ -147,7 +145,7 @@
             		if(ball.x>obstacleX[i]-50 && ball.x<obstacleX[i]+50 && ball.y>obstacleY[i]-50 && ball.y<obstacleY[i]+50) death();
             	}
             }
-                
+
             function update() {
             	if(keys.p) boo = true;
             	if(boo && !keys.p) { blocked = !blocked; boo = false; }
@@ -169,16 +167,31 @@
                 ctx.setTransform(1, 0, 0, 1, 0, 0);
                 ctx.scale(4,4);
                 ctx.fillStyle = "#FF0000";
-                ctx.fillText("Score: "+(ball.score/30-30-((ball.score/30)%1)), (W/2-100)/4, 12);
-                ctx.fillText("Best score: "+(ball.best-30),(W-315)/4,12);
+                ctx.fillText("Score: "+(ball.score/30-30-((ball.score/30)%1)),10, 12);
+                ctx.fillText("Best score: "+(ball.best-30),canvas.width/4-75,12);
                 ctx.scale(0.25,0.25);
             }
 
             function loop() {
                 ctx.fillStyle = "#000000";
-                ctx.fillRect(0, 0, W, H);
-                update();
-                draw();
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                if(!done) {
+                	ctx.fillStyle = "#AAAAAA";
+                	ctx.scale(4,4);
+                	ctx.fillText("Use the arrows to adjust the screen size...", 10, 25);
+                	ctx.fillText("Press ENTER to continue...", 10, 50);
+                	if(keys["ArrowUp"]) canvas.height+=1;
+                	if(keys["ArrowDown"]) canvas.height-=1;
+                	if(keys["ArrowRight"]) canvas.width+=1;
+                	if(keys["ArrowLeft"]) canvas.width-=1;
+                	ctx.scale(0.25,0.25);
+                	if(keys["Enter"]) done = true;
+                  draw();
+                }
+                else {
+                	update();
+                	draw();
+            	}
                 requestAnimationFrame(loop);
             }
 
