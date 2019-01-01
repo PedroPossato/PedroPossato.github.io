@@ -85,7 +85,6 @@
                 ctx.msImageSmoothingEnabled = false;
                 ctx.imageSmoothingEnabled = false;
                 ctx.drawImage(imageBall,ball.x,ball.y);
-
                 loop();
             }
 
@@ -162,7 +161,7 @@
             function draw() {
 
                 ctx.fillStyle = "#FFF";
-                ctx.drawImage(imageBall,ball.x,ball.y);
+                if(done) ctx.drawImage(imageBall,ball.x,ball.y);
                 drawObstacle();
                 ctx.setTransform(1, 0, 0, 1, 0, 0);
                 ctx.scale(4,4);
@@ -180,12 +179,12 @@
                 	ctx.scale(4,4);
                 	ctx.fillText("Use the arrows to adjust the screen size...", 10, 25);
                 	ctx.fillText("Press ENTER to continue...", 10, 50);
-                	if(keys["ArrowUp"]) canvas.height+=1;
-                	if(keys["ArrowDown"]) canvas.height-=1;
-                	if(keys["ArrowRight"]) canvas.width+=1;
-                	if(keys["ArrowLeft"]) canvas.width-=1;
+                	if(keys["ArrowUp"]) canvas.height+=2;
+                	if(keys["ArrowDown"] && canvas.height>370) canvas.height-=2;
+                	if(keys["ArrowRight"]) canvas.width+=2;
+                	if(keys["ArrowLeft"] && canvas.width>840) canvas.width-=2;
                 	ctx.scale(0.25,0.25);
-                	if(keys["Enter"]) done = true;
+                	if(keys["Enter"]) { done = true; ball.y = canvas.height/2-50; }
                   draw();
                 }
                 else {
